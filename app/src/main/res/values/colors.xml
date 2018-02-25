@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="rotoblade_primary">#42a5f5</color>
+    <color name="rotoblade_secondary">#cfd8dc</color>
+    <color name="rain_acid">#b2ff59</color>
+    <color name="bouncyballs_background">#80d8ff</color>
+    <color name="bouncyballs_ball">#ffee58</color>
+</resources>
