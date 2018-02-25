@@ -8,4 +8,10 @@
     <color name="rain_acid">#b2ff59</color>
     <color name="bouncyballs_background">#80d8ff</color>
     <color name="bouncyballs_ball">#ffee58</color>
+    <color name="nodes_one">#ff0000</color>
+    <color name="nodes_two">#ffff00</color>
+    <color name="nodes_three">#00ff53</color>
+    <color name="nodes_four">#0000ff</color>
+    <color name="nodes_five">#ff00ff</color>
+    <color name="nodes_six">#00ffff</color>
 </resources>
