@@ -53,8 +53,9 @@ public class BackgroundView extends View implements View.OnClickListener
 						new BackgroundHyperspace( r ),
 						new BackgroundFireworks( r ),
 						new BackgroundSnow( r ),
-						new BackgroundBouncyBalls( r ),*/
-						new BackgroundNodeNetwork( r )
+						new BackgroundBouncyBalls( r ),
+						new BackgroundNodeNetwork( r )*/
+						new BackgroundSlides( r ),
 				};
 
 		timerActive = false;
