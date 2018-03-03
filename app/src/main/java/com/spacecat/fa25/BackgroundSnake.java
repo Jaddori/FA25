@@ -4,6 +4,7 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -15,21 +16,41 @@ import java.util.Random;
 
 public class BackgroundSnake extends BaseBackground
 {
+	private class Node
+	{
+		public int score;
+		public Node from;
+		public Point location;
+
+		public Node()
+		{
+			score = 0;
+			from = null;
+			location = new Point();
+		}
+	}
+
 	private class Snake
 	{
 		public ArrayList<Point> parts;
 		public ArrayDeque<Point> processingParts;
+		public ArrayList<Point> path;
+		public int currentPath;
 
 		public Snake()
 		{
 			parts = new ArrayList<>();
 			processingParts = new ArrayDeque<>();
+			path = new ArrayList<>();
+			currentPath = 0;
 		}
 
 		public void reset( Random random, int width, int height )
 		{
 			parts.clear();
 			processingParts.clear();
+			path.clear();
+			currentPath = 0;
 
 			Point head = new Point( random.nextInt( width ), random.nextInt( height )-1 );
 			Point tail = new Point( head.x, head.y + 1 );
@@ -55,7 +76,7 @@ public class BackgroundSnake extends BaseBackground
 			}
 
 			// update movement of parts
-			Point movement = calculateMovement( apple );
+			/*Point movement = calculateMovement( apple );
 
 			for( int i=partCount-1; i>0; i-- )
 			{
@@ -67,7 +88,28 @@ public class BackgroundSnake extends BaseBackground
 
 			Point head = parts.get( 0 );
 			head.x += movement.x;
-			head.y += movement.y;
+			head.y += movement.y;*/
+
+			if( currentPath >= 0 && path.size() > 0 )
+			{
+				Point next = path.get( currentPath );
+				currentPath--;
+
+				for( int i=partCount-1; i>0; i-- )
+				{
+					Point ahead = parts.get( i - 1 );
+					Point current = parts.get( i );
+					current.set( ahead );
+				}
+
+				Point head = parts.get( 0 );
+				head.set( next );
+			}
+			else
+			{
+				calculatePath( apple );
+			}
+
 		}
 
 		public Point calculateMovement( Point apple )
@@ -141,6 +183,130 @@ public class BackgroundSnake extends BaseBackground
 			return result;
 		}
 
+		public void calculatePath( Point apple )
+		{
+			ArrayList<Node> closedSet = new ArrayList<>();
+			ArrayList<Node> openSet = new ArrayList<>();
+
+			Node startNode = new Node();
+			startNode.location.set( parts.get( 0 ) );
+			startNode.from = null;
+			startNode.score = 0;
+			openSet.add( startNode );
+
+			for( int i=0; i<parts.size(); i++ )
+			{
+				Point part = parts.get( i );
+				Node partNode = new Node();
+				partNode.location.set( part );
+
+				closedSet.add( partNode );
+			}
+
+			Node endNode = null;
+			while( openSet.size() > 0 )
+			{
+				int lowestScore = 99999;
+				Node nextNode = null;
+				for( int i=0; i<openSet.size(); i++ )
+				{
+					Node curNode = openSet.get( i );
+					if( curNode.score < lowestScore )
+					{
+						lowestScore = curNode.score;
+						nextNode = curNode;
+					}
+				}
+
+				if( nextNode.location.x == apple.x && nextNode.location.y == apple.y )
+				{
+					endNode = nextNode;
+					break;
+				}
+				else
+				{
+					openSet.remove( nextNode );
+					closedSet.add( nextNode );
+
+					// check left
+					Node leftNode = new Node();
+					leftNode.location.set( nextNode.location.x - 1, nextNode.location.y );
+					if( leftNode.location.x >= 0 )
+					{
+						addNode( apple, openSet, closedSet, leftNode, nextNode );
+					}
+
+					Node rightNode = new Node();
+					rightNode.location.set( nextNode.location.x + 1, nextNode.location.y );
+					if( rightNode.location.x < width )
+					{
+						addNode( apple, openSet, closedSet, rightNode, nextNode );
+					}
+
+					Node upNode = new Node();
+					upNode.location.set( nextNode.location.x, nextNode.location.y - 1 );
+					if( upNode.location.y >= 0 )
+					{
+						addNode( apple, openSet, closedSet, upNode, nextNode );
+					}
+
+					Node downNode = new Node();
+					downNode.location.set( nextNode.location.x, nextNode.location.y + 1 );
+					if( downNode.location.y < height )
+					{
+						addNode( apple, openSet, closedSet, downNode, nextNode );
+					}
+				}
+			}
+
+			if( endNode != null )
+			{
+				path.clear();
+
+				while( endNode.from != null )
+				{
+					path.add( endNode.location );
+					endNode = endNode.from;
+				}
+
+				currentPath = path.size() - 1;
+			}
+		}
+
+		private void addNode( Point apple, ArrayList<Node> openSet, ArrayList<Node> closedSet, Node newNode, Node prevNode )
+		{
+			boolean alreadyExists = false;
+			for( int i=0; i<closedSet.size() && !alreadyExists; i++ )
+			{
+				Node curNode = closedSet.get( i );
+				if( newNode.location.x == curNode.location.x && newNode.location.y == curNode.location.y )
+					alreadyExists = true;
+			}
+
+			if( !alreadyExists )
+			{
+				for( int i=0; i<openSet.size() && !alreadyExists; i++ )
+				{
+					Node curNode = openSet.get( i );
+					if( newNode.location.x == curNode.location.x && newNode.location.y == curNode.location.y )
+						alreadyExists = true;
+				}
+			}
+
+			if( !alreadyExists )
+			{
+				newNode.score = prevNode.score + calculateDistance( newNode.location, apple );
+				newNode.from = prevNode;
+				openSet.add( newNode );
+			}
+		}
+
+		private int calculateDistance( Point a, Point b )
+		{
+			Point dif = new Point( b.x - a.x, b.y - a.y );
+			return (int)Math.sqrt( dif.x*dif.x + dif.y*dif.y );
+		}
+
 		public void addPart()
 		{
 			Point head = parts.get( 0 );
@@ -167,6 +333,8 @@ public class BackgroundSnake extends BaseBackground
 		super.initialize();
 
 		redrawDelay = 100;
+		paint.setTypeface( Typeface.create( "Arial", Typeface.NORMAL ) );
+		paint.setTextSize( 32.0f );
 
 		random = new Random();
 		snake = new Snake();
@@ -225,6 +393,25 @@ public class BackgroundSnake extends BaseBackground
 			}
 
 			canvas.drawRect( partBounds, paint );
+		}
+
+		// debug draw path
+		/*paint.setColor( Color.RED );
+		for( int i=0; i<snake.path.size(); i++ )
+		{
+			Point point = snake.path.get( i );
+			Rect pathBounds = new Rect( point.x * tileWidth, point.y * tileHeight, (point.x+1)*tileWidth, (point.y+1)*tileHeight );
+
+			paint.setColor( Color.argb( 255, 32 + i*32, 0, 0 ));
+			canvas.drawRect( pathBounds, paint );
+		}*/
+
+		paint.setColor( Color.BLUE );
+		for( int i=0; i<snake.path.size(); i++ )
+		{
+			Point point = snake.path.get( i );
+
+			canvas.drawText( Integer.toString( i ), (point.x+0.5f) * tileWidth, (point.y+0.5f) * tileHeight, paint );
 		}
 
 		// draw apple

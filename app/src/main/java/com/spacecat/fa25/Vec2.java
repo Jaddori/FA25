@@ -20,4 +20,22 @@ public class Vec2
 		this.x = x;
 		this.y = y;
 	}
+
+	public Vec2( Vec2 ref )
+	{
+		x = ref.x;
+		y = ref.y;
+	}
+
+	public void set( float x, float y )
+	{
+		this.x = x;
+		this.y = y;
+	}
+
+	public void set( Vec2 ref )
+	{
+		x = ref.x;
+		y = ref.y;
+	}
 }

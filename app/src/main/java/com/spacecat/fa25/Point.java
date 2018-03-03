@@ -20,4 +20,22 @@ public class Point
 		this.x = x;
 		this.y = y;
 	}
+
+	public Point( Point ref )
+	{
+		x = ref.x;
+		y = ref.y;
+	}
+
+	public void set( int x, int y )
+	{
+		this.x = x;
+		this.y = y;
+	}
+
+	public void set( Point ref )
+	{
+		x = ref.x;
+		y = ref.y;
+	}
 }
