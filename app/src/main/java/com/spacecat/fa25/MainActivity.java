@@ -27,6 +27,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		lbl_title = (TextView)findViewById( R.id.lbl_title );
 		lbl_reason = (TextView)findViewById( R.id.lbl_reason );
 
+		lbl_title.setVisibility( View.GONE );
+		lbl_reason.setVisibility( View.GONE );
+
 		view_background.setOnClickListener( this );
 
 		random = new Random();
