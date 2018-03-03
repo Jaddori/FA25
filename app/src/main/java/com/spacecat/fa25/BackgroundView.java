@@ -47,7 +47,7 @@ public class BackgroundView extends View implements View.OnClickListener
 		Resources r = getResources();
 		backgrounds = new BaseBackground[]
 				{
-						/*new BackgroundPulse( r ),
+						new BackgroundPulse( r ),
 						new BackgroundRotoblade( r ),
 						new BackgroundRain( r ),
 						new BackgroundHyperspace( r ),
@@ -57,7 +57,7 @@ public class BackgroundView extends View implements View.OnClickListener
 						new BackgroundNodeNetwork( r ),
 						new BackgroundSlides( r ),
 						new BackgroundSnake( r ),
-						new BackgroundRadar( r ),*/
+						new BackgroundRadar( r ),
 						new BackgroundHeartbeat( r ),
 				};
 
