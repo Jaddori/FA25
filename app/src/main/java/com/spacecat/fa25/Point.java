@@ -38,4 +38,9 @@ public class Point
 		x = ref.x;
 		y = ref.y;
 	}
+
+	public boolean equals( Point ref )
+	{
+		return ( x == ref.x && y == ref.y );
+	}
 }

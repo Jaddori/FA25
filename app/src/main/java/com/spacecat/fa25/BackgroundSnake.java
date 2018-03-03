@@ -3,11 +3,14 @@ package com.spacecat.fa25;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
 
 /**
@@ -36,6 +39,7 @@ public class BackgroundSnake extends BaseBackground
 		public ArrayDeque<Point> processingParts;
 		public ArrayList<Point> path;
 		public int currentPath;
+		public boolean alive;
 
 		public Snake()
 		{
@@ -43,6 +47,7 @@ public class BackgroundSnake extends BaseBackground
 			processingParts = new ArrayDeque<>();
 			path = new ArrayList<>();
 			currentPath = 0;
+			alive = true;
 		}
 
 		public void reset( Random random, int width, int height )
@@ -51,6 +56,7 @@ public class BackgroundSnake extends BaseBackground
 			processingParts.clear();
 			path.clear();
 			currentPath = 0;
+			alive = true;
 
 			Point head = new Point( random.nextInt( width ), random.nextInt( height )-1 );
 			Point tail = new Point( head.x, head.y + 1 );
@@ -76,21 +82,7 @@ public class BackgroundSnake extends BaseBackground
 			}
 
 			// update movement of parts
-			/*Point movement = calculateMovement( apple );
-
-			for( int i=partCount-1; i>0; i-- )
-			{
-				Point ahead = parts.get( i - 1 );
-				Point current = parts.get( i );
-				current.x = ahead.x;
-				current.y = ahead.y;
-			}
-
-			Point head = parts.get( 0 );
-			head.x += movement.x;
-			head.y += movement.y;*/
-
-			if( currentPath >= 0 && path.size() > 0 )
+			/*if( currentPath >= 0 && path.size() > 0 )
 			{
 				Point next = path.get( currentPath );
 				currentPath--;
@@ -105,11 +97,84 @@ public class BackgroundSnake extends BaseBackground
 				Point head = parts.get( 0 );
 				head.set( next );
 			}
-			else
+			else*/
+			if( currentPath < 0 || path.size() <= 0 )
 			{
 				calculatePath( apple );
+
+				if( path.size() <= 0 )
+				{
+					Point head = new Point( parts.get( 0 ) );
+
+					ArrayList<Point> validMovements = new ArrayList<>();
+
+					if( !occupied( new Point( head.x-1, head.y ) ) )
+						validMovements.add( new Point( head.x-1, head.y ) );
+
+					if( !occupied( new Point( head.x+1, head.y ) ) )
+						validMovements.add( new Point( head.x+1, head.y ) );
+
+					if( !occupied( new Point( head.x, head.y-1 ) ) )
+						validMovements.add( new Point( head.x, head.y-1 ) );
+
+					if( !occupied( new Point( head.x, head.y+1 ) ) )
+						validMovements.add( new Point( head.x, head.y+1 ) );
+
+					if( validMovements.size() > 0 )
+					{
+						Point movement = validMovements.get( random.nextInt( validMovements.size() ) );
+						path.add( movement );
+
+						currentPath = 0;
+					}
+					else
+					{
+						alive = false;
+					}
+				}
 			}
 
+			Point head = parts.get( 0 );
+			for( int i=1; i<parts.size(); i++ )
+			{
+				if( head.equals( parts.get( i ) ) )
+				{
+					alive = false;
+				}
+			}
+
+			if( alive )
+			{
+				Point next = path.get( currentPath );
+				currentPath--;
+
+				for( int i=partCount-1; i>0; i-- )
+				{
+					Point ahead = parts.get( i - 1 );
+					Point current = parts.get( i );
+					current.set( ahead );
+				}
+
+				head = parts.get( 0 );
+				head.set( next );
+			}
+		}
+
+		private boolean occupied( Point point )
+		{
+			boolean result = false;
+
+			if( point.x < 0 || point.x >= width || point.y < 0 || point.y >= height )
+				result = true;
+
+			for( int i=0; i<parts.size() && !result; i++ )
+			{
+				Point part = parts.get( i );
+				if( part.x == point.x && part.y == point.y )
+					result = true;
+			}
+
+			return result;
 		}
 
 		public Point calculateMovement( Point apple )
@@ -185,6 +250,8 @@ public class BackgroundSnake extends BaseBackground
 
 		public void calculatePath( Point apple )
 		{
+			path.clear();
+
 			ArrayList<Node> closedSet = new ArrayList<>();
 			ArrayList<Node> openSet = new ArrayList<>();
 
@@ -261,8 +328,6 @@ public class BackgroundSnake extends BaseBackground
 
 			if( endNode != null )
 			{
-				path.clear();
-
 				while( endNode.from != null )
 				{
 					path.add( endNode.location );
@@ -271,6 +336,8 @@ public class BackgroundSnake extends BaseBackground
 
 				currentPath = path.size() - 1;
 			}
+			else
+				currentPath = -1;
 		}
 
 		private void addNode( Point apple, ArrayList<Node> openSet, ArrayList<Node> closedSet, Node newNode, Node prevNode )
@@ -321,6 +388,8 @@ public class BackgroundSnake extends BaseBackground
 	private Point apple;
 	private int width;
 	private int height;
+	private int flashElapsed;
+	private int respawnDelay;
 
 	BackgroundSnake( Resources resources )
 	{
@@ -333,14 +402,14 @@ public class BackgroundSnake extends BaseBackground
 		super.initialize();
 
 		redrawDelay = 100;
-		paint.setTypeface( Typeface.create( "Arial", Typeface.NORMAL ) );
-		paint.setTextSize( 32.0f );
 
 		random = new Random();
 		snake = new Snake();
 		apple = new Point();
-		width = 20;
-		height = 20;
+		width = 10;
+		height = 10;
+		flashElapsed = 0;
+		respawnDelay = 40;
 	}
 
 	@Override
@@ -352,6 +421,8 @@ public class BackgroundSnake extends BaseBackground
 		apple.y = random.nextInt( height );
 
 		snake.reset( random, width, height );
+
+		flashElapsed = 0;
 	}
 
 	@Override
@@ -367,51 +438,90 @@ public class BackgroundSnake extends BaseBackground
 		canvas.drawRect( bounds, paint );
 
 		// update and draw snake
-		snake.updatePosition( apple, width, height );
-		Point snakeHead = snake.parts.get( 0 );
-		if( snakeHead.x == apple.x && snakeHead.y == apple.y )
+		if( snake.alive )
 		{
-			apple.x = random.nextInt( width );
-			apple.y = random.nextInt( height );
+			snake.updatePosition( apple, width, height );
 
-			snake.addPart();
+			Point snakeHead = snake.parts.get( 0 );
+			if( snakeHead.x == apple.x && snakeHead.y == apple.y )
+			{
+				boolean occupied = true;
+				while( occupied )
+				{
+					apple.x = random.nextInt( width );
+					apple.y = random.nextInt( height );
+
+					occupied = false;
+					for( int i = 0; i < snake.parts.size() && !occupied; i++ )
+					{
+						Point part = snake.parts.get( i );
+						if( part.x == apple.x && part.y == apple.y )
+							occupied = true;
+					}
+				}
+
+				snake.addPart();
+			}
+		}
+		else
+		{
+			flashElapsed++;
+
+			if( flashElapsed > respawnDelay )
+			{
+				reset();
+				return;
+			}
 		}
 
-		paint.setColor( Color.WHITE );
-		for( int i=0; i<snake.parts.size(); i++ )
+		if( snake.alive || flashElapsed % 6 < 3 )
 		{
-			Point part = snake.parts.get( i );
-			Rect partBounds = new Rect( part.x * tileWidth, part.y * tileHeight, (part.x+1)*tileWidth, (part.y+1)*tileHeight );
+			// draw head
+			paint.setColor( Color.GRAY );
+			Point head = snake.parts.get( 0 );
+			Rect headBounds = new Rect( head.x * tileWidth, head.y * tileHeight, (head.x+1) * tileWidth, (head.y+1) * tileHeight );
 
-			if( !snake.processingParts.isEmpty() )
+			if( !snake.processingParts.isEmpty() && snake.processingParts.getLast().equals( head ) )
 			{
-				Point processedPart = snake.processingParts.getFirst();
-				if( part.x == processedPart.x && part.y == processedPart.y )
-				{
-					partBounds.set( partBounds.left - 5, partBounds.top - 5, partBounds.right + 5, partBounds.bottom + 5 );
-				}
+				headBounds.left -= 16;
+				headBounds.right += 16;
+				headBounds.top -= 16;
+				headBounds.bottom += 16;
 			}
 
-			canvas.drawRect( partBounds, paint );
-		}
+			canvas.drawRect( headBounds, paint );
 
-		// debug draw path
-		/*paint.setColor( Color.RED );
-		for( int i=0; i<snake.path.size(); i++ )
-		{
-			Point point = snake.path.get( i );
-			Rect pathBounds = new Rect( point.x * tileWidth, point.y * tileHeight, (point.x+1)*tileWidth, (point.y+1)*tileHeight );
+			// draw parts
+			paint.setColor( Color.WHITE );
+			for( int i = 1; i < snake.parts.size(); i++ )
+			{
+				Point part = snake.parts.get( i );
+				Rect partBounds = new Rect( part.x * tileWidth, part.y * tileHeight, (part.x + 1) * tileWidth, (part.y + 1) * tileHeight );
 
-			paint.setColor( Color.argb( 255, 32 + i*32, 0, 0 ));
-			canvas.drawRect( pathBounds, paint );
-		}*/
+				boolean isProcessing = false;
+				if( !snake.processingParts.isEmpty() )
+				{
+					Iterator<Point> it = snake.processingParts.iterator();
+					while( !isProcessing && it.hasNext() )
+					{
+						Point processedPart = it.next();
+						if( processedPart.x == part.x && processedPart.y == part.y )
+						{
+							isProcessing = true;
+						}
+					}
+				}
 
-		paint.setColor( Color.BLUE );
-		for( int i=0; i<snake.path.size(); i++ )
-		{
-			Point point = snake.path.get( i );
+				if( isProcessing )
+				{
+					partBounds.left -= 16;
+					partBounds.right += 16;
+					partBounds.top -= 16;
+					partBounds.bottom += 16;
+				}
 
-			canvas.drawText( Integer.toString( i ), (point.x+0.5f) * tileWidth, (point.y+0.5f) * tileHeight, paint );
+				canvas.drawRect( partBounds, paint );
+			}
 		}
 
 		// draw apple
